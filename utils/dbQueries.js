@@ -4,4 +4,9 @@ const userQueries = {
     updateUserPassword: `UPDATE Bookshop.users SET password=?, salt=? WHERE email = ?`
 };
 
-module.exports = userQueries;
+const categoryQueries = {
+    selectAllCategories: `SELECT * FROM Bookshop.category`
+};
+
+module.exports = { userQueries, categoryQueries};
+
