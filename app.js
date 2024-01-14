@@ -8,8 +8,10 @@ dotenv.config();
 
 const userRouter = require('./routes/users');
 const bookRouter = require('./routes/books');
+const categoryRouter = require('./routes/category');
 
 app.use('/users', userRouter);
 app.use('/books', bookRouter);
+app.use('/category', categoryRouter);
 
 app.listen(3000);
