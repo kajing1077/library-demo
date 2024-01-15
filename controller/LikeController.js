@@ -1,5 +1,6 @@
 const conn = require("../mariadb");
 const { StatusCodes } = require("http-status-codes");
+const { likeQueries } = require("../utils/dbQueries")
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
 dotenv.config();
@@ -19,8 +20,7 @@ const addLike = (req, res) => {
         });
     } else {
 
-        let sql = `INSERT INTO Bookshop.likes (user_id, liked_book_id)
-                   VALUES (?, ?)`;
+        let sql = likeQueries.insertLikeForBook;
 
         let values = [authorization.id, book_id];
         conn.query(sql, values,
@@ -48,10 +48,7 @@ const removeLike = (req, res) => {
             'message': '잘못된 토큰입니다.'
         });
     } else {
-        let sql = `DELETE
-                   FROM Bookshop.likes
-                   WHERE user_id = ?
-                     AND liked_book_id = ?`;
+        let sql = likeQueries.deleteLikeForBook;
         let values = [authorization.id, book_id];
 
         conn.query(sql, values,

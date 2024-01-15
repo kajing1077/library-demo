@@ -23,5 +23,15 @@ const cartQueries = {
                          WHERE id = ?;`
 };
 
-module.exports = { userQueries, categoryQueries, cartQueries };
+const likeQueries = {
+    insertLikeForBook: `INSERT INTO Bookshop.likes (user_id, liked_book_id)
+                        VALUES (?, ?);`,
+
+    deleteLikeForBook: `DELETE
+                        FROM Bookshop.likes
+                        WHERE user_id = ?
+                          AND liked_book_id = ?;`
+};
+
+module.exports = { userQueries, categoryQueries, cartQueries, likeQueries };
 
