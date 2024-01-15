@@ -1,5 +1,5 @@
 const conn = require("../mariadb");
-const { insertUser, selectUserByEmail, updateUserPassword } = require("../utils/dbQueries");
+const { userQueries } = require("../utils/dbQueries");
 const { StatusCodes } = require("http-status-codes");
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
@@ -10,7 +10,7 @@ dotenv.config();
 const join = (req, res) => {
     const { email, password } = req.body;
 
-    let sql = insertUser;
+    let sql = userQueries.insertUser;
 
     const salt = crypto.randomBytes(10).toString('base64');
     const hashPassword = crypto.pbkdf2Sync(password, salt, 10000, 10, 'sha512').toString('base64');
@@ -30,7 +30,7 @@ const join = (req, res) => {
 const login = (req, res) => {
     const { email, password } = req.body;
 
-    let sql = selectUserByEmail;
+    let sql = userQueries.selectUserByEmail
 
     conn.query(sql, email,
         (err, results) => {
@@ -70,7 +70,7 @@ const login = (req, res) => {
 const passwordResetRequest = (req, res) => {
     const { email } = req.body;
 
-    let sql = selectUserByEmail;
+    let sql = userQueries.selectUserByEmail;
     conn.query(sql, email,
         (err, results) => {
             if (err) {
@@ -92,7 +92,7 @@ const passwordResetRequest = (req, res) => {
 const passwordReset = (req, res) => {
     const { password, email } = req.body;
 
-    let sql = updateUserPassword;
+    let sql = userQueries.updateUserPassword;
 
     const salt = crypto.randomBytes(10).toString('base64');
     const hashPassword = crypto.pbkdf2Sync(password, salt, 10000, 10, 'sha512').toString('base64');
