@@ -8,5 +8,20 @@ const categoryQueries = {
     selectAllCategories: `SELECT * FROM Bookshop.category`
 };
 
-module.exports = { userQueries, categoryQueries};
+const cartQueries = {
+    insertCartItem: `INSERT INTO Bookshop.cartItems (book_id, quantity, user_id)
+                     VALUES (?, ?, ?);`,
+
+    selectCartItemsByUser: `SELECT cartItems.id, book_id, title, summary, quantity, price
+                            FROM cartItems
+                                 LEFT JOIN books ON cartItems.book_id = books.id
+                            WHERE user_id = ?
+                              AND cartItems.id IN (?);`,
+
+    deleteCartItemById: `DELETE
+                         FROM Bookshop.cartItems
+                         WHERE id = ?;`
+};
+
+module.exports = { userQueries, categoryQueries, cartQueries };
 

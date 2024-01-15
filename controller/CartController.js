@@ -1,5 +1,6 @@
 const conn = require("../mariadb");
 const { StatusCodes } = require("http-status-codes");
+const { cartQueries } = require("../utils/dbQueries")
 const jwt = require("jsonwebtoken");
 const dotenv = require('dotenv');
 
@@ -21,8 +22,7 @@ const addToCart = (req, res) => {
             'message': '잘못된 토큰입니다.'
         });
     } else {
-        let sql = `INSERT INTO Bookshop.cartItems (book_id, quantity, user_id)
-                   VALUES (?, ?, ?);`
+        let sql = cartQueries.insertCartItem;
         let values = [book_id, quantity, authorization.id];
         conn.query(sql, values,
             (err, results) => {
@@ -50,11 +50,7 @@ const getCartItems = (req, res) => {
             'message': '잘못된 토큰입니다.'
         });
     } else {
-        let sql = `SELECT cartItems.id, book_id, title, summary, quantity, price
-                   FROM cartItems
-                            LEFT JOIN books ON cartItems.book_id = books.id
-                   WHERE user_id = ?
-                     AND cartItems.id IN (?)`;
+        let sql = cartQueries.selectCartItemsByUser;
 
         let values = [authorization.id, selected];
         conn.query(sql, values,
@@ -71,9 +67,7 @@ const getCartItems = (req, res) => {
 const removeCartItem = (req, res) => {
     const cartItemId = req.params.id;
     
-    let sql = `DELETE
-               FROM Bookshop.cartItems
-               WHERE id = ?`;
+    let sql = cartQueries.deleteCartItemById;
     conn.query(sql, cartItemId,
         (err, results) => {
             if (err) {
