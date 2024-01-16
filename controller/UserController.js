@@ -1,9 +1,9 @@
 const conn = require("../mariadb");
-const { userQueries } = require("../utils/dbQueries");
-const { StatusCodes } = require("http-status-codes");
 const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
 const dotenv = require('dotenv');
+const { StatusCodes } = require("http-status-codes");
+const { userQueries } = require("../utils/dbQueries");
+const { generateSalt, hashPassword, comparePassword } = require("../utils/encryption");
 
 dotenv.config();
 
@@ -12,25 +12,29 @@ const join = (req, res) => {
 
     let sql = userQueries.insertUser;
 
-    const salt = crypto.randomBytes(10).toString('base64');
-    const hashPassword = crypto.pbkdf2Sync(password, salt, 10000, 10, 'sha512').toString('base64');
+    const salt = generateSalt();
+    const hashPasswordValue = hashPassword(password, salt);
 
-
-    let values = [email, hashPassword, salt];
+    let values = [email, hashPasswordValue, salt];
     conn.query(sql, values,
         (err, results) => {
             if (err) {
                 console.log(err);
                 return res.status(StatusCodes.BAD_REQUEST).end();
             }
-            return res.status(StatusCodes.CREATED).json(results);
+
+            if (results.affectedRows) {
+                return res.status(StatusCodes.CREATED).json(results);
+            } else {
+                return res.status(StatusCodes.BAD_REQUEST).end();
+            }
         })
-}
+};
 
 const login = (req, res) => {
     const { email, password } = req.body;
 
-    let sql = userQueries.selectUserByEmail
+    let sql = userQueries.selectUserByEmail;
 
     conn.query(sql, email,
         (err, results) => {
@@ -39,18 +43,21 @@ const login = (req, res) => {
                 return res.status(StatusCodes.BAD_REQUEST).end();
             }
 
-            let loginUser = results[0];
+            const loginUser = results[0];
 
-            const hashPassword = crypto.pbkdf2Sync(password, loginUser.salt, 10000, 10, 'sha512').toString('base64');
+            if (!loginUser || !comparePassword(password, loginUser.salt, loginUser.password)) {
+                return res.status(StatusCodes.UNAUTHORIZED).end();
+            }
 
+            const salt = loginUser.salt;
+            const hashPasswordValue = hashPassword(password, salt);
 
-            if (loginUser && loginUser.password === hashPassword) {
-                // token 발급
+            if (loginUser && loginUser.password === hashPasswordValue) {
                 const token = jwt.sign({
                     id: loginUser.id,
                     email: loginUser.email,
                 }, process.env.PRIVATE_KEY, {
-                    expiresIn: '1m',
+                    expiresIn: '10m',
                     issuer: "kim"
                 });
 
@@ -58,10 +65,11 @@ const login = (req, res) => {
                 res.cookie("token", token, {
                     httpOnly: true,
                 });
+
+
                 return res.status(StatusCodes.OK).json(results);
-            } else {
-                res.status(StatusCodes.UNAUTHORIZED).end();
             }
+            res.status(StatusCodes.UNAUTHORIZED).end();
         }
     )
 }
@@ -71,12 +79,14 @@ const passwordResetRequest = (req, res) => {
     const { email } = req.body;
 
     let sql = userQueries.selectUserByEmail;
+
     conn.query(sql, email,
         (err, results) => {
             if (err) {
                 console.log(err);
                 return res.status(StatusCodes.BAD_REQUEST).end();
             }
+            // 이메일로 유저 있는지 찾아보기
             const user = results[0];
             if (user) {
                 return res.status(StatusCodes.OK).json({
@@ -92,12 +102,13 @@ const passwordResetRequest = (req, res) => {
 const passwordReset = (req, res) => {
     const { password, email } = req.body;
 
+
     let sql = userQueries.updateUserPassword;
 
-    const salt = crypto.randomBytes(10).toString('base64');
-    const hashPassword = crypto.pbkdf2Sync(password, salt, 10000, 10, 'sha512').toString('base64');
+    const salt = generateSalt();
+    const hashPasswordValue = hashPassword(password, salt);
 
-    let values = [hashPassword, salt, email];
+    let values = [hashPasswordValue, salt, email];
     conn.query(sql, values,
         (err, results) => {
             if (err) {
