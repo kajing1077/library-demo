@@ -4,6 +4,8 @@ const dotenv = require('dotenv');
 const { StatusCodes } = require("http-status-codes");
 const { userQueries } = require("../utils/dbQueries");
 const { generateSalt, hashPassword, comparePassword } = require("../utils/encryption");
+const { handleDatabaseError } = require("../utils/errorHandler");
+const { sendResponse } = require("../utils/responseHandler");
 
 dotenv.config();
 
@@ -19,16 +21,16 @@ const join = (req, res) => {
     conn.query(sql, values,
         (err, results) => {
             if (err) {
-                console.log(err);
-                return res.status(StatusCodes.BAD_REQUEST).end();
+                return handleDatabaseError(err, res);
             }
 
             if (results.affectedRows) {
-                return res.status(StatusCodes.CREATED).json(results);
+                return sendResponse(res, StatusCodes.CREATED, results);
             } else {
-                return res.status(StatusCodes.BAD_REQUEST).end();
+                return sendResponse(res, StatusCodes.BAD_REQUEST);
             }
-        })
+        }
+    );
 };
 
 const login = (req, res) => {
@@ -39,14 +41,13 @@ const login = (req, res) => {
     conn.query(sql, email,
         (err, results) => {
             if (err) {
-                console.log(err);
-                return res.status(StatusCodes.BAD_REQUEST).end();
+                return handleDatabaseError(err, res);
             }
 
             const loginUser = results[0];
 
             if (!loginUser || !comparePassword(password, loginUser.salt, loginUser.password)) {
-                return res.status(StatusCodes.UNAUTHORIZED).end();
+                return sendResponse(res, StatusCodes.UNAUTHORIZED);
             }
 
             const salt = loginUser.salt;
@@ -61,17 +62,15 @@ const login = (req, res) => {
                     issuer: "kim"
                 });
 
-                // 토큰 쿠키에 담기
                 res.cookie("token", token, {
                     httpOnly: true,
                 });
 
-
-                return res.status(StatusCodes.OK).json(results);
+                return sendResponse(res, StatusCodes.OK, results);
             }
-            res.status(StatusCodes.UNAUTHORIZED).end();
+            return sendResponse(res, StatusCodes.UNAUTHORIZED);
         }
-    )
+    );
 }
 
 
