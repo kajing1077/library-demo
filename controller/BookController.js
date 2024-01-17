@@ -2,8 +2,8 @@ const conn = require("../mariadb");
 const { StatusCodes } = require("http-status-codes");
 const ensureAuthorization = require('../auth');
 const jwt = require("jsonwebtoken");
-const { handleDatabaseError } = require("../utils/errorHandler");
-const { sendResponse } = require("../utils/responseHandler");
+const { createBookDetailQuery } = require('../utils/bookQueries');
+
 
 const allBooks = (req, res) => {
     let allBooksRes = {};
@@ -30,7 +30,7 @@ const allBooks = (req, res) => {
         (err, results) => {
             if (err) {
                 console.log(err);
-                return handleDatabaseError(err, res);
+                return res.status(StatusCodes.BAD_REQUEST).end();
             }
 
             if (results.length) {
@@ -40,86 +40,74 @@ const allBooks = (req, res) => {
                 });
                 allBooksRes.books = results;
             } else {
-                return sendResponse(res, StatusCodes.NOT_FOUND);
-            }
-        });
-
-    sql = "SELECT found_rows()";
-
-    conn.query(sql,
-        (err, results) => {
-            if (err) {
-                console.log(err);
-                return handleDatabaseError(err, res);
+                return res.status(StatusCodes.NOT_FOUND).end();
             }
 
-            let pagination = {};
-            pagination.currentPage = parseInt(currentPage);
-            pagination.totalCount = results[0]["found_rows()"];
+            sql = "SELECT found_rows()";
 
-            allBooksRes.pagination = pagination;
+            conn.query(sql,
+                (err, results) => {
+                    if (err) {
+                        console.log(err);
+                        return res.status(StatusCodes.BAD_REQUEST).end();
+                    }
 
-            return sendResponse(res, StatusCodes.OK, allBooksRes);
+                    let pagination = {};
+                    pagination.currentPage = parseInt(currentPage);
+                    pagination.totalCount = results[0]["found_rows()"];
 
+                    allBooksRes.pagination = pagination;
+
+                    return res.status(StatusCodes.OK).json(allBooksRes);
+                });
         });
-}
+};
+
 
 
 const bookDetail = (req, res) => {
     let authorization = ensureAuthorization(req, res);
 
     if (authorization instanceof jwt.TokenExpiredError) {
-        return sendResponse(res, StatusCodes.UNAUTHORIZED, { 'message': '로그인 세션이 만료되었습니다.' });
+        return res.status(StatusCodes.UNAUTHORIZED).json({
+            'message': '로그인 세션이 만료되었습니다.'
+        });
     } else if (authorization instanceof jwt.JsonWebTokenError) {
-        return sendResponse(res, StatusCodes.BAD_REQUEST, { 'message': '잘못된 토큰입니다.' });
+        return res.status(StatusCodes.BAD_REQUEST).json({
+            'message': '잘못된 토큰입니다.'
+        });
     } else if (authorization instanceof ReferenceError) {
         let book_id = req.params.id;
-        let sql = `SELECT *,
-                          (SELECT count(*) FROM Bookshop.likes WHERE liked_book_id = books.id) AS likes
-                   FROM Bookshop.books
-                            LEFT JOIN Bookshop.category
-                                      ON books.category_id = category.category_id
-                   WHERE books.id = ?`;
-        let values = [book_id];
+        let { sql, values } = createBookDetailQuery({ user_id: null, book_id, is_logged_in: false });
+
         conn.query(sql, values, (err, results) => {
             if (err) {
                 console.log(err);
-                return handleDatabaseError(err, res);
+                return res.status(StatusCodes.BAD_REQUEST).end();
             }
-            if (results[0]) {
-                return sendResponse(res, StatusCodes.OK, results[0]);
-            } else {
-                return sendResponse(res, StatusCodes.NOT_FOUND);
-            }
-        })
-    } else {// 로그인 상태
+            handleQueryResult(res, results);
+        });
+    } else {
         let book_id = parseInt(req.params.id);
+        let { sql, values } = createBookDetailQuery({ user_id: authorization.id, book_id, is_logged_in: true });
 
-        let sql = `SELECT *,
-                          (SELECT count(*) FROM Bookshop.likes WHERE liked_book_id = books.id) AS likes,
-                          (SELECT EXISTS (SELECT 1
-                                          FROM Bookshop.likes
-                                          WHERE likes.user_id = ?
-                                            AND likes.liked_book_id = ?))                      AS liked
-                   FROM Bookshop.books
-                            LEFT JOIN Bookshop.category
-                                      ON books.category_id = category.category_id
-                   WHERE books.id = ?`;
-        let values = [authorization.id, book_id, book_id];
         conn.query(sql, values, (err, results) => {
             if (err) {
                 console.log(err);
-                return handleDatabaseError(err, res);
+                return res.status(StatusCodes.BAD_REQUEST).end();
             }
-            if (results[0]) {
-                return sendResponse(res, StatusCodes.OK, results[0]);
-            } else {
-                return sendResponse(res, StatusCodes.NOT_FOUND);
-            }
-        })
+            handleQueryResult(res, results);
+        });
     }
-}
+};
 
+const handleQueryResult = (res, results) => {
+    if (results[0]) {
+        res.status(StatusCodes.OK).json(results[0]);
+    } else {
+        res.status(StatusCodes.NOT_FOUND).end();
+    }
+};
 
 module.exports = {
     allBooks,
