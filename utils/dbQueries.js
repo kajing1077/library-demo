@@ -33,5 +33,47 @@ const likeQueries = {
                           AND liked_book_id = ?;`
 };
 
-module.exports = { userQueries, categoryQueries, cartQueries, likeQueries };
+const orderQueries = {
+    insertNewDeliveryInfo: `INSERT INTO Bookshop.delivery (address, receiver, contact)
+                            VALUES (?, ?, ?)`,
+
+    insertNewOrder: `INSERT INTO orders (book_title, total_quantity, total_price, user_id, delivery_id)
+                     VALUES (?, ?, ?, ?, ?)`,
+
+    selectCartItemsForOrder: `SELECT book_id, quantity
+                              FROM cartItems
+                              WHERE id IN (?)`,
+
+    insertOrderedBooks: `INSERT INTO orderedBook (order_id, book_id, quantity) VALUES ?`,
+
+    removeAllSelectedCartItems: `DELETE
+                                  FROM cartItems
+                                  WHERE id IN (?)`,
+
+    fetchOrderById: `SELECT book_id, title, author, price, quantity
+                            FROM orderedBook
+                                 LEFT JOIN books ON orderedBook.book_id = books.id
+                            WHERE order_id = ?`,
+
+    fetchOrdersByUserId: `SELECT orders.id,
+                                created_at,
+                                address,
+                                receiver,
+                                contact,
+                                book_title,
+                                total_quantity,
+                                total_price
+                         FROM orders
+                              LEFT JOIN delivery
+                                    ON orders.delivery_id = delivery.id
+                         WHERE user_id = ?`,
+
+    fetchOrderDetailsByIdAndUserId: `SELECT book_id, title, author, price, quantity
+                   FROM orderedBook
+                            LEFT JOIN books ON orderedBook.book_id = books.id
+                   WHERE order_id = ?`,
+};
+
+
+module.exports = { userQueries, categoryQueries, cartQueries, likeQueries, orderQueries };
 
