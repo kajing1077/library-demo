@@ -18,6 +18,6 @@ app.use('/books', bookRouter);
 app.use('/category', categoryRouter);
 app.use('/carts', cartRouter);
 app.use('/likes', likeRouter);
-app.use('orders', orderRouter);
+app.use('/orders', orderRouter);
 
 app.listen(process.env.PORT);
