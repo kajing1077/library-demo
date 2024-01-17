@@ -91,7 +91,7 @@ const getOrders = async (req, res) => {
             dateStrings: true,
         });
 
-        let sql = orderQueries.fetchOrderById;
+        let sql = orderQueries.fetchOrdersByUserId;
 
 
         //let sql = orderQueries.fetchOrdersByUserId;
