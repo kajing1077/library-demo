@@ -30,7 +30,7 @@ const order = async (req, res) => {
 
 
         // delivery 테이블 삽입
-        let sql = orderQueries.insertNewDeliveryInfo
+        let sql = orderQueries.insertNewDeliveryInfo;
         let values = [delivery.address, delivery.receiver, delivery.contact];
         let [results] = await conn.execute(sql, values);
 
@@ -57,10 +57,10 @@ const order = async (req, res) => {
             values.push([order_id, item.book_id, item.quantity]);
         })
 
-        // results = await conn.query(sql, [values]);
+        //results = await conn.query(sql, [values]);
         let result = await deleteCartItems(conn, items);
 
-        return sendResponse(res, StatusCodes.OK, results);
+        return sendResponse(res, StatusCodes.OK, result);
     }
 };
 const deleteCartItems = async (conn, items) => {
@@ -130,6 +130,7 @@ const getOrderDetail = async (req, res) => {
 
 
         rows = rows.map(result => convertSnakeToCamel(result));
+        console.log(rows);
 
         return sendResponse(res, StatusCodes.OK, rows);
     }
