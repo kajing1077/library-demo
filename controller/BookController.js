@@ -3,6 +3,8 @@ const { StatusCodes } = require("http-status-codes");
 const ensureAuthorization = require('../auth');
 const jwt = require("jsonwebtoken");
 const { createBookDetailQuery } = require('../utils/bookQueries');
+const { handleDatabaseError } = require("../utils/errorHandler");
+const { sendResponse } = require("../utils/responseHandler");
 
 
 const allBooks = (req, res) => {
@@ -29,8 +31,7 @@ const allBooks = (req, res) => {
     conn.query(sql, values,
         (err, results) => {
             if (err) {
-                console.log(err);
-                return res.status(StatusCodes.BAD_REQUEST).end();
+                return handleDatabaseError(err, res);
             }
 
             if (results.length) {
@@ -40,7 +41,7 @@ const allBooks = (req, res) => {
                 });
                 allBooksRes.books = results;
             } else {
-                return res.status(StatusCodes.NOT_FOUND).end();
+                return handleDatabaseError(err, res);
             }
 
             sql = "SELECT found_rows()";
@@ -48,8 +49,7 @@ const allBooks = (req, res) => {
             conn.query(sql,
                 (err, results) => {
                     if (err) {
-                        console.log(err);
-                        return res.status(StatusCodes.BAD_REQUEST).end();
+                        return handleDatabaseError(err, res);
                     }
 
                     let pagination = {};
@@ -57,8 +57,7 @@ const allBooks = (req, res) => {
                     pagination.totalCount = results[0]["found_rows()"];
 
                     allBooksRes.pagination = pagination;
-
-                    return res.status(StatusCodes.OK).json(allBooksRes);
+                    return sendResponse(res, StatusCodes.OK, allBooksRes);
                 });
         });
 };
@@ -82,8 +81,7 @@ const bookDetail = (req, res) => {
 
         conn.query(sql, values, (err, results) => {
             if (err) {
-                console.log(err);
-                return res.status(StatusCodes.BAD_REQUEST).end();
+                return handleDatabaseError(err, res);
             }
             handleQueryResult(res, results);
         });
@@ -93,8 +91,7 @@ const bookDetail = (req, res) => {
 
         conn.query(sql, values, (err, results) => {
             if (err) {
-                console.log(err);
-                return res.status(StatusCodes.BAD_REQUEST).end();
+                return handleDatabaseError(err, res);
             }
             handleQueryResult(res, results);
         });

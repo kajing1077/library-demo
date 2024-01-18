@@ -3,6 +3,8 @@ const { StatusCodes } = require("http-status-codes");
 const jwt = require("jsonwebtoken");
 const ensureAuthorization = require('../auth');
 const { cartQueries } = require("../utils/dbQueries");
+const { handleDatabaseError } = require("../utils/errorHandler");
+const { sendResponse } = require("../utils/responseHandler");
 
 
 // 장바구니 담기
@@ -25,10 +27,9 @@ const addToCart = (req, res) => {
         conn.query(sql, values,
             (err, results) => {
                 if (err) {
-                    console.log(err);
-                    return res.status(StatusCodes.BAD_REQUEST).end();
+                    return handleDatabaseError(err, res);
                 }
-                return res.status(StatusCodes.OK).json(results);
+                return sendResponse(res, StatusCodes.OK, results);
             })
     }
 };
@@ -62,14 +63,13 @@ const getCartItems = (req, res) => {
         conn.query(sql, values,
             (err, results) => {
                 if (err) {
-                    console.log(err);
-                    return res.status(StatusCodes.BAD_REQUEST).end();
+                    return handleDatabaseError(err, res);
                 }
                 results.map(function (result) {
                     result.bookId = result.book_id;
                     delete result.book_id;
                 });
-                return res.status(StatusCodes.OK).json(results);
+                return sendResponse(res, StatusCodes.OK, results);
             })
     }
 };
@@ -95,10 +95,9 @@ const removeCartItem = (req, res) => {
         conn.query(sql, cartItemId,
             (err, results) => {
                 if (err) {
-                    console.log(err);
-                    return res.status(StatusCodes.BAD_REQUEST).end();
+                    return handleDatabaseError(err, res);
                 }
-                return res.status(StatusCodes.OK).json(results);
+                return sendResponse(res, StatusCodes.OK, results);
             })
     }
 };

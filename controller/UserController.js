@@ -66,12 +66,13 @@ const login = (req, res) => {
                     httpOnly: true,
                 });
 
-                return sendResponse(res, StatusCodes.OK, results);
+                return sendResponse(res, StatusCodes.OK, results[0]);
             }
             return sendResponse(res, StatusCodes.UNAUTHORIZED);
         }
     );
 }
+
 
 
 const passwordResetRequest = (req, res) => {

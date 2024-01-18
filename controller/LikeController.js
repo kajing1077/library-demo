@@ -4,6 +4,8 @@ const { likeQueries } = require("../utils/dbQueries");
 const ensureAuthorization = require("../auth");
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
+const { sendResponse } = require("../utils/responseHandler");
+const { handleDatabaseError } = require("../utils/errorHandler");
 dotenv.config();
 
 const addLike = (req, res) => {
@@ -27,10 +29,9 @@ const addLike = (req, res) => {
         conn.query(sql, values,
             (err, results) => {
                 if (err) {
-                    console.log(err);
-                    return res.status(StatusCodes.BAD_REQUEST).end();
+                    return handleDatabaseError(err, res);
                 }
-                return res.status(StatusCodes.OK).json(results);
+                return sendResponse(res, StatusCodes.OK, results);
             })
     }
 };
@@ -55,10 +56,9 @@ const removeLike = (req, res) => {
         conn.query(sql, values,
             (err, results) => {
                 if (err) {
-                    console.log(err);
-                    return res.status(StatusCodes.BAD_REQUEST).end();
+                    return handleDatabaseError(err, res);
                 }
-                return res.status(StatusCodes.OK).json(results);
+                return sendResponse(res, StatusCodes.OK, results);
             })
     }
 };

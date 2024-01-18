@@ -3,6 +3,7 @@ const mariadb = require("mysql2/promise");
 const { orderQueries } = require("../utils/dbQueries");
 const ensureAuthorization = require('../auth');
 const jwt = require("jsonwebtoken");
+const { sendResponse } = require("../utils/responseHandler");
 
 
 const order = async (req, res) => {
@@ -42,7 +43,6 @@ const order = async (req, res) => {
         [results] = await conn.execute(sql, values);
         let order_id = results.insertId;
 
-        console.log(results);
 
 
         // items를 가지고, 장바구니에서 book_id, quantity 조회
@@ -60,7 +60,7 @@ const order = async (req, res) => {
         // results = await conn.query(sql, [values]);
         let result = await deleteCartItems(conn, items);
 
-        return res.status(StatusCodes.OK).json(result);
+        return sendResponse(res, StatusCodes.OK, results);
     }
 };
 const deleteCartItems = async (conn, items) => {
@@ -99,7 +99,7 @@ const getOrders = async (req, res) => {
 
         rows = rows.map(result => convertSnakeToCamel(result));
 
-        return res.status(StatusCodes.OK).json(rows);
+        return sendResponse(res, StatusCodes.OK, rows);
     }
 };
 const getOrderDetail = async (req, res) => {
@@ -131,7 +131,7 @@ const getOrderDetail = async (req, res) => {
 
         rows = rows.map(result => convertSnakeToCamel(result));
 
-        return res.status(StatusCodes.OK).json(rows);
+        return sendResponse(res, StatusCodes.OK, rows);
     }
 }
 
