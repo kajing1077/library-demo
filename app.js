@@ -1,6 +1,7 @@
 // express 모듈
 const express = require('express');
 const app = express();
+const cookieParser = require('cookie-parser');
 
 // dotenv 모듈
 const dotenv = require('dotenv');
@@ -13,6 +14,7 @@ const cartRouter = require('./routes/carts');
 const likeRouter = require('./routes/likes');
 const orderRouter = require('./routes/orders');
 
+app.use(cookieParser());
 app.use('/users', userRouter);
 app.use('/books', bookRouter);
 app.use('/category', categoryRouter);
