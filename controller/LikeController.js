@@ -49,27 +49,34 @@ const removeLike = (req, res) => {
 
     let authorization = ensureAuthorization(req, res);
 
-    if (authorization instanceof jwt.TokenExpiredError) {
-        return res.status(StatusCodes.UNAUTHORIZED).json({
-            'message': '로그인 세션이 만료되었습니다.'
-        });
-    } else if (authorization instanceof jwt.JsonWebTokenError) {
-        return res.status(StatusCodes.BAD_REQUEST).json({
-            'message': '잘못된 토큰입니다.'
-        });
-    } else {
-        let sql = likeQueries.deleteLikeForBook;
-        let values = [authorization.id, book_id];
 
-        conn.query(sql, values,
-            (err, results) => {
-                if (err) {
-                    return handleDatabaseError(err, res);
-                }
-                return sendResponse(res, StatusCodes.OK, results);
-            })
+
+    if (authorization.error) {
+        if (authorization.message === "Access Token must be provided") {
+            return res.status(StatusCodes.UNAUTHORIZED).json({
+                'message': '로그인이 필요합니다.'
+            });
+        } else {
+            removeLikeForBook(authorization.id, book_id, res);
+        }
+    } else {
+        removeLikeForBook(authorization.id, book_id, res);
     }
 };
+
+const removeLikeForBook = (user_id, book_id, res) => {
+    let sql = likeQueries.deleteLikeForBook;
+    let values = [user_id, book_id];
+
+    conn.query(sql, values, (err, results) => {
+        if (err) {
+            return handleDatabaseError(err, res);
+        }
+
+        return sendResponse(res, StatusCodes.OK, results);
+    });
+};
+
 
 
 
