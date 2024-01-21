@@ -54,15 +54,31 @@ const login = (req, res) => {
             const hashPasswordValue = hashPassword(password, salt);
 
             if (loginUser && loginUser.password === hashPasswordValue) {
-                const token = jwt.sign({
+                // 액세스 토큰 발급
+                const accessToken = jwt.sign({
                     id: loginUser.id,
                     email: loginUser.email,
-                }, process.env.PRIVATE_KEY, {
+                }, process.env.ACCESS_TOKEN_SECRET, {
+                    expiresIn: '2m',
+                    issuer: "kim"
+                });
+
+                // 리프레시 토큰 발급
+                const refreshToken = jwt.sign({
+                    id: loginUser.id,
+                    email: loginUser.email,
+                }, process.env.REFRESH_TOKEN_SECRET, {
                     expiresIn: '10m',
                     issuer: "kim"
                 });
 
-                res.cookie("token", token, {
+                // 액세스 토큰을 클라이언트에게 전달
+                res.cookie("token", accessToken, {
+                    httpOnly: true,
+                });
+
+                // 리프레시 토큰을 클라이언트에게 전달
+                res.cookie("refreshToken", refreshToken, {
                     httpOnly: true,
                 });
 
@@ -72,7 +88,6 @@ const login = (req, res) => {
         }
     );
 }
-
 
 
 const passwordResetRequest = (req, res) => {
